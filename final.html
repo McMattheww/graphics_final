@@ -116,8 +116,15 @@ class Shape {
         gl.vertexAttribPointer(aColorLocation, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(aColorLocation);
 
+        gl.bindBuffer(gl.ARRAY_BUFFER, nbuffer);    //pass color buffer
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.normals), gl.STATIC_DRAW);
+        gl.vertexAttribPointer(aNormalLocation, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(aNormalLocation);
+
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibuffer);  //pass index buffer
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
+
+        
 
 
         const combinedMatrix = mat4.create();      //create combined matrix

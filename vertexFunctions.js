@@ -1,3 +1,4 @@
+/*
 function setCubeVert () {
     return new Float32Array([
     0.5,  0.5,  -.5,  // right, top,    far
@@ -10,6 +11,74 @@ function setCubeVert () {
     0.5, -0.5,  .5    // right, bottom, near
     ])
 }
+function setCubeIndices () {
+    return new Uint16Array([
+    0,1,2, // far face
+    0,2,3, // far face
+    0,3,7, // right face
+    0,7,4, // right face
+    6,2,3, // bottom face
+    6,3,7, // bottom face
+    5,1,2, // left face
+    5,2,6, // left face
+    5,1,0, // top face
+    5,0,4, // top face
+    5,6,7, // near face
+    5,7,4  // near face
+    ]);
+}
+*/
+function setCubeVert () {
+    return new Float32Array([
+    //top face
+    0.5,  0.5,  -.5,  // right, top,    far
+    -0.5,  0.5,  -.5, // left,  top,    far
+    0.5,  0.5,  .5,   // right, top,    near
+    -0.5,  0.5,  .5,  // left,  top,    near
+    //bottom face
+    -0.5, -0.5,  -.5, // left,  bottom, far
+    0.5, -0.5,  -.5,  // right, bottom, far
+    -0.5, -0.5,  .5,  // left,  bottom, near
+    0.5, -0.5,  .5,    // right, bottom, near
+    //left face
+    -0.5,  0.5,  -.5, // left,  top,    far
+    -0.5, -0.5,  -.5, // left,  bottom, far
+    -0.5,  0.5,  .5,  // left,  top,    near
+    -0.5, -0.5,  .5,  // left,  bottom, near
+    //right face
+    0.5,  0.5,  -.5,  // right, top,    far
+    0.5, -0.5,  -.5,  // right, bottom, far
+    0.5,  0.5,  .5,   // right, top,    near
+    0.5, -0.5,  .5,    // right, bottom, near
+    //far face
+    0.5,  0.5,  -.5,  // right, top,    far
+    -0.5,  0.5,  -.5, // left,  top,    far
+    -0.5, -0.5,  -.5, // left,  bottom, far
+    0.5, -0.5,  -.5,  // right, bottom, far
+    //near face
+    0.5,  0.5,  .5,   // right, top,    near
+    -0.5,  0.5,  .5,  // left,  top,    near
+    -0.5, -0.5,  .5,  // left,  bottom, near
+    0.5, -0.5,  .5    // right, bottom, near
+    ])
+}
+function setCubeIndices () {
+    return new Uint16Array([
+    0,1,2, // far face
+    1,2,3, // far face
+    4,5,6, // right face
+    5,6,7, // right face
+    8,9,10, // bottom face
+    9,10,11, // bottom face
+    12,13,14, // left face
+    13,14,15, // left face
+    16,17,18, 
+    18,19,16, 
+    20,21,22, 
+    22,23,20  
+    ]);
+}
+
 function setCubeColor () {  //black
     return new Float32Array([
     0.1, 0.1, 0.1,
@@ -46,8 +115,8 @@ function setCubeColorG () { //grey
     0.5, 0.4, 0.3,
     ]);
 }
-function setCubeIndices () {
-    return new Uint16Array([
+function setCubeNormals () {
+    return new Float32Array([
     0,1,2, // far face
     0,2,3, // far face
     0,3,7, // right face
