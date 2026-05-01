@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Cube</title>
+</head>
+<body>
+    <canvas id="webgl-canvas" width="800" height="800"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"></script>
+<script>
+// Vertex shader source code
+const vertexShaderSource = `
+    attribute vec3 aPosition, aNormal;
+    attribute vec3 vColor;
+    uniform mat4 mMatrix, vMatrix, pMatrix;
+    uniform mat3 nMatrix;
+    varying vec3 fColor; 
+
+    void main() {
+        vec4 hPosition = vec4(aPosition, 1.0);
+        vec4 wPosition = mMatrix * hPosition;
+
+        
+
+        gl_Position = pMatrix * vMatrix * wPosition;
+        fColor = vColor;
+    }
+`;
+</script>
+<script>
+// Fragment shader source code
+const fragmentShaderSource = `
+    precision mediump float;
+    varying vec3 fColor;
+
+    void main() {
+        gl_FragColor = vec4(fColor, 1.0);
+    }
+`;
+</script>
+<script type="text/javascript" src="setupShader.js"></script>
+<script type="text/javascript" src="vertexFunctions.js"></script>
+<script>
+
+//create buffers
+const vbuffer = gl.createBuffer();  //vertex buffer
+const nbuffer = gl.createBuffer();  //normal buffer
+const cbuffer = gl.createBuffer();  //color buffer
+const ibuffer = gl.createBuffer();  //index buffer
+
+// attribute locations
+const aPositionLocation = gl.getAttribLocation(program, 'aPosition');
+const aNormalLocation = gl.getAttribLocation(program, 'aNormal');
+const aColorLocation = gl.getAttribLocation(program, 'vColor');
+
+// MVP matrices locations
+const mMatrixLocation = gl.getUniformLocation(program, "mMatrix");
+const vMatrixLocation = gl.getUniformLocation(program, "vMatrix");
+const pMatrixLocation = gl.getUniformLocation(program, "pMatrix");
+const nMatrixLocation = gl.getUniformLocation(program, "nMatrix");
+
+
+// setup and pass the view and projection matricies
+let vMatrix = mat4.create();
+let pMatrix = mat4.create();
+
+//setup the view matrix- initial camera position
+let eye_position = new Float32Array([12, 4, 6]);
+let COI = new Float32Array([0, 2, 6]);
+let upwards = new Float32Array([0, 1000, 0]);
+mat4.lookAt(vMatrix, eye_position, COI, upwards);
+
+//set pmatrix for perspective projection
+//aspect ratio = 1:1, fovY = 90 degrees, near clipping = 1, far clipping = 25
+mat4.perspective(pMatrix, 1/2 * Math.PI, 1, 1, 25)
+
+
+
+// global draw
+function draw(){
+    // Set up the viewport and clear the canvas
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clearColor(0.3, 0.3, 0.3, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LESS);
+    
+    // pass V and P matrices to the shader
+    gl.uniformMatrix4fv(vMatrixLocation, false, vMatrix);
+    gl.uniformMatrix4fv(pMatrixLocation, false, pMatrix);
+
+    //now drawing individual scene objects
+    person.draw();
+    scenery.draw();
+}
+
+
+class Shape {
+    constructor(vertices, indices, mMatrix, color, normals) {
+        this.vertices = vertices;
+        this.indices = indices;
+        this.mMatrix = mMatrix;
+        this.color = color;
+        this.normals = normals;
+    }
+    draw(parentMatrix = mat4.create()) {
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);     //pass vertex buffer
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
+        gl.vertexAttribPointer(aPositionLocation, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(aPositionLocation);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, cbuffer);    //pass color buffer
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.color), gl.STATIC_DRAW);
+        gl.vertexAttribPointer(aColorLocation, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(aColorLocation);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibuffer);  //pass index buffer
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
+
+
+        const combinedMatrix = mat4.create();      //create combined matrix
+        mat4.mul(combinedMatrix, parentMatrix, this.mMatrix);
+        gl.uniformMatrix4fv(mMatrixLocation, false, new Float32Array(combinedMatrix)); //pass mMatrix
+
+
+
+        const nMatrix = mat3.create();     //create nMatrix
+        mat3.fromMat4(nMatrix, combinedMatrix) //make mMatrix 3x3
+        mat3.invert(nMatrix, nMatrix)   // invert matrix
+        mat3.transpose(nMatrix, nMatrix) //transpose matrix
+        gl.uniformMatrix3fv(nMatrixLocation, false, new Float32Array(nMatrix)); //pass nMatrix
+
+
+        gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_SHORT, 0);  //draw
+    }
+        
+}   
+
+class ObjectWebGL {
+    constructor(mMatrix = mat4.create()) {
+        this.shapes = [];
+        this.mMatrix = mMatrix;
+        this.children = [];
+    }
+    local_transform(matrix){
+        mat4.mul(this.mMatrix, this.mMatrix, matrix)
+    }
+    global_transform(matrix){
+        mat4.mul(this.mMatrix, matrix, this.mMatrix)
+    }
+    draw(parentMatrix = mat4.create()) {
+        const combinedMatrix = mat4.create();
+        mat4.mul(combinedMatrix, parentMatrix, this.mMatrix);
+        for (const shape of this.shapes) {
+            shape.draw(combinedMatrix);
+        }
+        for (const child of this.children) {
+            child.draw(combinedMatrix);
+        }
+    }
+}
+
+//Creating all of the objects to be rendered in the scene
+
+let temp = mat4.create(); //matrix used to define the mMatrix of shapes and objects during construction
+
+const person = new ObjectWebGL();
+temp = mat4.create(); mat4.scale(temp, temp, [1, 1.5, 1]);
+const body = new Shape(setCylinderVert(), setCylinderIndices(), temp, setCylinderColor());
+temp = mat4.create(); mat4.translate(temp, temp, [0, 1.25, 0]);
+const head = new Shape(setSphereVert(), setSphereIndices(), temp, setSphereColor()); 
+person.shapes.push(body);
+person.shapes.push(head);
+
+const leg1 = new ObjectWebGL();
+temp = mat4.create(); mat4.translate(temp, temp, [0, -0.75, 0]); leg1.local_transform(temp);
+temp = mat4.create(); mat4.translate(temp, temp, [-0.3, -0.75, 0]); mat4.rotateZ(temp, temp, -0.05); mat4.rotateY(temp, temp, Math.PI);  mat4.scale(temp, temp, [0.40, 1.5, 0.40]);
+const leg1s = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColor()); 
+leg1.shapes.push(leg1s);
+
+const leg2 = new ObjectWebGL();
+temp = mat4.create(); mat4.translate(temp, temp, [0, -0.75, 0]); leg2.local_transform(temp);
+temp = mat4.create(); mat4.translate(temp, temp, [0.3, -0.75, 0]); mat4.rotateZ(temp, temp, 0.05); mat4.scale(temp, temp, [0.40, 1.5, 0.40]);
+const leg2s = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColor()); 
+leg2.shapes.push(leg2s);
+
+const arms = new ObjectWebGL();
+temp = mat4.create(); mat4.translate(temp, temp, [0, 0.65, 0]); arms.local_transform(temp)
+temp = mat4.create(); mat4.translate(temp, temp, [-0.625, 0, 0]); mat4.rotateZ(temp, temp, -0.07); mat4.rotateX(temp, temp, -1/2 * Math.PI); mat4.scale(temp, temp, [0.25, 1.5, 0.25]); 
+const arm1 = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColor()); 
+temp = mat4.create(); mat4.translate(temp, temp, [0.625, 0, 0]); mat4.rotateZ(temp, temp, 0.07); mat4.rotateX(temp, temp, -1/2 * Math.PI);  mat4.scale(temp, temp, [0.25, 1.5, 0.25]);
+const arm2 = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColor());  
+for (let i = 0; i < arm1.vertices.length/3; i++){    
+    arm1.vertices[i*3 + 1] = arm1.vertices[i*3 + 1] - 0.5;
+    arm2.vertices[i*3 + 1] = arm2.vertices[i*3 + 1] - 0.5;
+}
+arms.shapes.push(arm1);
+arms.shapes.push(arm2);
+
+const box = new ObjectWebGL();
+temp = mat4.create(); mat4.translate(temp, temp, [0, 0.175, 1.4]); box.local_transform(temp);
+temp = mat4.create(); mat4.translate(temp, temp, [0, 0.625, 0]); mat4.scale(temp, temp, [1.25, 1.25, 1.25]);
+const cube = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColorB()); 
+box.shapes.push(cube)
+
+person.children.push(leg1);
+person.children.push(leg2);
+person.children.push(arms);
+
+arms.children.push(box);
+
+
+const scenery = new ObjectWebGL();
+temp = mat4.create(); mat4.translate(temp, temp, [0, -2.5, 0]); mat4.scale(temp, temp, [70, 1, 70]);
+const ground = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColorG()); 
+scenery.shapes.push(ground);
+for (let i = 0; i < 20; i++){
+    temp = mat4.create(); mat4.translate(temp, temp, [(Math.random()*40)-20, -0.9, (Math.random()*40)-20]); mat4.scale(temp, temp, [1.5, 2, 1.5]);
+    let barrel = new Shape(setCylinderVert(), setCylinderIndices(), temp, setCylinderColorB()); 
+    scenery.shapes.push(barrel);
+}
+for (let i = 0; i < 20; i++){
+    temp = mat4.create(); mat4.translate(temp, temp, [(Math.random()*40)-20, -1.33, (Math.random()*40)-20]); mat4.scale(temp, temp, [1.25, 1.25, 1.25]);
+    let cardboard = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColorB()); 
+    scenery.shapes.push(cardboard);
+}
+
+
+
+//variables for keeping track of animation state
+var cycle = 4;
+var mode = 0;
+var size = 3;
+var angle = 1;
+
+document.addEventListener('keydown', (e)=>{ //increase box size if not too big
+    if (e.key == 'r'){
+        if (size < 25){
+            let temp= mat4.create();
+            mat4.translate(temp, temp, [0, 0, 0.06]);
+            mat4.scale(temp, temp, [1.1, 1.1, 1.1]);
+            box.local_transform(temp);
+            size ++;
+        }
+    }
+    if (e.key == 'f'){
+        if (size > 0){ //decrease box size if not too small
+            let temp= mat4.create();
+            mat4.scale(temp, temp, [0.9090909090909091, 0.9090909090909091, 0.9090909090909091]);
+            mat4.translate(temp, temp, [0, 0, -0.06]);
+            box.local_transform(temp);
+            size--;
+        }
+    }
+    if (e.key == 'w'){ //move forward and run animation cycle
+        let temp= mat4.create();
+        mat4.translate(temp, temp, [0, 0, 0.2]);
+        person.local_transform(temp);
+
+        if (mode == 0){
+            temp= mat4.create();
+            mat4.rotateX(temp, temp, -Math.PI / 16)
+            leg1.local_transform(temp);
+            temp= mat4.create();
+            mat4.rotateX(temp, temp, Math.PI / 16)
+            leg2.local_transform(temp);
+            temp= mat4.create();
+            mat4.translate(temp, temp, [0, 0.1, 0]);
+            box.global_transform(temp);
+        }
+        if (mode == 1){
+            temp= mat4.create();
+            mat4.rotateX(temp, temp, Math.PI / 16)
+            leg1.local_transform(temp);
+            temp= mat4.create();
+            mat4.rotateX(temp, temp, -Math.PI / 16)
+            leg2.local_transform(temp);
+            temp= mat4.create();
+            mat4.translate(temp, temp, [0, -0.1, 0]);
+            box.global_transform(temp);
+        }
+
+        cycle ++;
+        if (cycle == 10){mode = 1;}
+        if (cycle == 20){mode = 0; cycle = 0;}
+    }
+    else if (e.key == 'a'){ //rotate left
+        let temp= mat4.create();
+        mat4.rotateY(temp, temp, 0.1);
+       person.local_transform(temp);
+    }
+    else if (e.key == 'd'){ //rotate right
+        let temp= mat4.create();
+        mat4.rotateY(temp, temp, -0.1);
+       person.local_transform(temp);
+    }
+    else if (e.key == 'q'){ //rotate arms downwards if not angle too low already
+        if (angle < 7){ 
+            let temp= mat4.create();
+            mat4.rotateX(temp, temp, 0.1);
+            arms.local_transform(temp);
+            angle ++;
+        }
+    }
+    else if (e.key == 'e'){ //rotate arms upwards if not angle too high already
+        if (angle > 0){ 
+            let temp= mat4.create();
+            mat4.rotateX(temp, temp, -0.1);
+            arms.local_transform(temp);
+            angle --;
+        }
+    }
+    else if (e.key == 'ArrowLeft'){ //camera pan left
+        let temp= mat4.create();
+        mat4.rotateY(temp, temp, 0.1);
+        mat4.invert(temp, temp);
+        mat4.mul(vMatrix, temp, vMatrix)
+    }
+    else if (e.key == 'ArrowRight'){ //camera pan right
+        let temp= mat4.create();
+        mat4.rotateY(temp, temp, -0.1);
+        mat4.invert(temp, temp);
+        mat4.mul(vMatrix, temp, vMatrix)
+    }
+    else if (e.key == 'ArrowUp'){ //camera tilt up
+        let temp= mat4.create();
+        mat4.rotateX(temp, temp, 0.1);
+        mat4.invert(temp, temp);
+        mat4.mul(vMatrix, temp, vMatrix)
+    }
+    else if (e.key == 'ArrowDown'){ //camera tilt down
+        let temp= mat4.create();
+        mat4.rotateX(temp, temp, -0.1);
+        mat4.invert(temp, temp);
+        mat4.mul(vMatrix, temp, vMatrix)
+    }
+    else if (e.key == 'z'){ //camera rotate CW
+        let temp= mat4.create();
+        mat4.rotateZ(temp, temp, 0.1);
+        mat4.invert(temp, temp);
+        mat4.mul(vMatrix, temp, vMatrix)
+    }
+    else if (e.key == 'x'){ //camera rotate CCW
+        let temp= mat4.create();
+        mat4.rotateZ(temp, temp, -0.1);
+        mat4.invert(temp, temp);
+        mat4.mul(vMatrix, temp, vMatrix)
+    }
+    draw();
+}, false);
+
+const instructions = document.createElement('div');
+instructions.style.position = 'absolute';
+instructions.style.top = '10px';
+instructions.style.left = '520px';
+instructions.style.color = 'black';
+instructions.style.fontFamily = 'Arial, sans-serif';
+instructions.style.fontSize = '14px';
+instructions.style.lineHeight = '1.6';
+instructions.innerHTML = `
+    <h3>Controls:</h3>
+    <p>W: Move forwards</p>
+    <p>A/D: Rotate Left/Right</p>
+    <p>Q/E: Rotate Arms Up/Down</p>
+    <p>R/F: Scale Box Up/Down</p>
+    <h3>Camera Controls:</h3>
+    <p>Arrow Left/Right: Pan</p>
+    <p>Arrow Up/Down: Tilt</p>
+    <p>Z/X: Roll</p>
+`;
+document.body.appendChild(instructions);
+
+draw();
+
+</script>
+</body>
+</html>
