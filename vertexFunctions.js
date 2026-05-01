@@ -1,33 +1,4 @@
-/*
-function setCubeVert () {
-    return new Float32Array([
-    0.5,  0.5,  -.5,  // right, top,    far
-    -0.5,  0.5,  -.5, // left,  top,    far
-    -0.5, -0.5,  -.5, // left,  bottom, far
-    0.5, -0.5,  -.5,  // right, bottom, far
-    0.5,  0.5,  .5,   // right, top,    near
-    -0.5,  0.5,  .5,  // left,  top,    near
-    -0.5, -0.5,  .5,  // left,  bottom, near
-    0.5, -0.5,  .5    // right, bottom, near
-    ])
-}
-function setCubeIndices () {
-    return new Uint16Array([
-    0,1,2, // far face
-    0,2,3, // far face
-    0,3,7, // right face
-    0,7,4, // right face
-    6,2,3, // bottom face
-    6,3,7, // bottom face
-    5,1,2, // left face
-    5,2,6, // left face
-    5,1,0, // top face
-    5,0,4, // top face
-    5,6,7, // near face
-    5,7,4  // near face
-    ]);
-}
-*/
+
 function setCubeVert () {
     return new Float32Array([
     //top face
@@ -64,19 +35,59 @@ function setCubeVert () {
 }
 function setCubeIndices () {
     return new Uint16Array([
-    0,1,2, // far face
-    1,2,3, // far face
-    4,5,6, // right face
-    5,6,7, // right face
-    8,9,10, // bottom face
-    9,10,11, // bottom face
-    12,13,14, // left face
-    13,14,15, // left face
+    //top face
+    0,1,2, 
+    1,2,3,  
+    //bottom face
+    4,5,6,  
+    5,6,7,  
+    //left face
+    8,9,10,  
+    9,10,11,  
+    //right face
+    12,13,14, 
+    13,14,15, 
+    //far face
     16,17,18, 
     18,19,16, 
+    //near face
     20,21,22, 
     22,23,20  
     ]);
+}
+function setCubeNormals () {
+    return new Float32Array([
+    //top face
+    0,  1,  0,  // right, top,    far
+    0,  1,  0, // left,  top,    far
+    0,  1,  0,   // right, top,    near
+    0,  1,  0,  // left,  top,    near
+    //bottom face
+    0,  -1,  0, // left,  bottom, far
+    0,  -1,  0,  // right, bottom, far
+    0,  -1,  0,  // left,  bottom, near
+    0,  -1,  0,    // right, bottom, near
+    //left face
+    -1,  0,  0, // left,  top,    far
+    -1,  0,  0, // left,  bottom, far
+    -1,  0,  0,  // left,  top,    near
+    -1,  0,  0,  // left,  bottom, near
+    //right face
+    1,  0,  0,  // right, top,    far
+    1,  0,  0,  // right, bottom, far
+    1,  0,  0,   // right, top,    near
+    1,  0,  0,    // right, bottom, near
+    //far face
+    0,  0,  -1,  // right, top,    far
+    0,  0,  -1, // left,  top,    far
+    0,  0,  -1, // left,  bottom, far
+    0,  0,  -1,  // right, bottom, far
+    //near face
+    0,  0,  1,   // right, top,    near
+    0,  0,  1,  // left,  top,    near
+    0,  0,  1,  // left,  bottom, near
+    0,  0,  1,    // right, bottom, near
+    ])
 }
 
 function setCubeColor () {  //black
@@ -85,6 +96,27 @@ function setCubeColor () {  //black
     0.1, 0.1, 0.1,
     0.1, 0.1, 0.1,
     0.1, 0.1, 0.1,
+    //
+    0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1,
+    //
+    0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1,
+    //
+    0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1,
+    //
+    0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1,
+    //
     0.1, 0.1, 0.1,
     0.1, 0.1, 0.1,
     0.1, 0.1, 0.1,
@@ -93,12 +125,33 @@ function setCubeColor () {  //black
 }
 function setCubeColorB () { //brown
     return new Float32Array([
-    0.5, 0.25, 0,
-    0.5, 0.25, 0,
     0.15, 0.1, 0,
     0.15, 0.1, 0,
-    0.5, 0.25, 0,
-    0.5, 0.25, 0,
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    //
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    //
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    //
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    //
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
+    //
+    0.15, 0.1, 0,
+    0.15, 0.1, 0,
     0.15, 0.1, 0,
     0.15, 0.1, 0,
     ]);
@@ -109,28 +162,34 @@ function setCubeColorG () { //grey
     0.5, 0.4, 0.3,
     0.5, 0.4, 0.3,
     0.5, 0.4, 0.3,
+    //
+    0.5, 0.4, 0.3,
+    0.5, 0.4, 0.3,
+    0.5, 0.4, 0.3,
+    0.5, 0.4, 0.3,
+    //
+    0.5, 0.4, 0.3,
+    0.5, 0.4, 0.3,
+    0.5, 0.4, 0.3,
+    0.5, 0.4, 0.3,
+    //
+    0.5, 0.4, 0.3,
+    0.5, 0.4, 0.3,
+    0.5, 0.4, 0.3,
+    0.5, 0.4, 0.3,
+    //
+    0.5, 0.4, 0.3,
+    0.5, 0.4, 0.3,
+    0.5, 0.4, 0.3,
+    0.5, 0.4, 0.3,
+    //
     0.5, 0.4, 0.3,
     0.5, 0.4, 0.3,
     0.5, 0.4, 0.3,
     0.5, 0.4, 0.3,
     ]);
 }
-function setCubeNormals () {
-    return new Float32Array([
-    0,1,2, // far face
-    0,2,3, // far face
-    0,3,7, // right face
-    0,7,4, // right face
-    6,2,3, // bottom face
-    6,3,7, // bottom face
-    5,1,2, // left face
-    5,2,6, // left face
-    5,1,0, // top face
-    5,0,4, // top face
-    5,6,7, // near face
-    5,7,4  // near face
-    ]);
-}
+
 
 // helper function to create cylinder vertices, creates vertices for a circle along the X and Z axes, with Y offset from argument
 // --- start AI code --- 
@@ -162,6 +221,15 @@ function setCylinderVert () {
     ...topCircle,  //top circle vertices
     0, -0.5,  0, // bottom middle
     ...bottomCircle  //bottom circle vertices
+    ])
+}
+function setCylinderNormals () {
+    const circle = createCircleVertices(32, 0);
+    return new Float32Array([
+    0,  1,  0,  // top middle
+    ...circle,  //top circle vertices
+    0, -1,  0, // bottom middle
+    ...circle  //bottom circle vertices
     ])
 }
 function setCylinderColor () { //standard person color
@@ -275,6 +343,30 @@ function setSphereIndices (latSegments = 16, lonSegments = 16) {
     return ret;
 }
 // --- end AI code ---
+
+//calculating sphere normals is the exact same as calculating the vertex positions, expect we must ensure the vectors are length 1
+function setSphereNormals (latSegments = 16, lonSegments = 16) {
+    const normals = [];
+     for (let lat = 0; lat <= latSegments; lat++) {
+        const theta = lat * Math.PI / latSegments;
+        const sinTheta = Math.sin(theta);
+        const cosTheta = Math.cos(theta);
+        for (let lon = 0; lon <= lonSegments; lon++) {
+            const phi = lon * 2 * Math.PI / lonSegments;
+            const sinPhi = Math.sin(phi);
+            const cosPhi = Math.cos(phi);
+
+            const x = cosPhi * sinTheta;
+            const y = cosTheta;
+            const z = sinPhi * sinTheta;
+
+            normals.push(1 * x, 1 * y, 1 * z);
+            
+        }
+    }
+    const ret = new Float32Array(normals);
+    return ret;
+}
 
 function setSphereColor (latSegments = 16, lonSegments = 16) {
     const count = (latSegments + 1) * (lonSegments + 1);

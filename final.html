@@ -21,10 +21,13 @@ const vertexShaderSource = `
         vec4 hPosition = vec4(aPosition, 1.0);
         vec4 wPosition = mMatrix * hPosition;
 
+        vec3 N = normalize(nMatrix * aNormal);
+
         
 
         gl_Position = pMatrix * vMatrix * wPosition;
-        fColor = vColor;
+        //fColor = vColor;
+        fColor = vColor + 0.0001 * N;
     }
 `;
 </script>
@@ -66,10 +69,15 @@ let vMatrix = mat4.create();
 let pMatrix = mat4.create();
 
 //setup the view matrix- initial camera position
-let eye_position = new Float32Array([12, 4, 6]);
+const eye_position = new Float32Array([12, 4, 6]);
 let COI = new Float32Array([0, 2, 6]);
 let upwards = new Float32Array([0, 1000, 0]);
 mat4.lookAt(vMatrix, eye_position, COI, upwards);
+
+//define lighting parameters
+const lightPosition = [0.0, 0.0, 3.0];
+const I = [1.0, 1.0, 1.0];
+const Ia = [0.1, 0.1, 0.1];
 
 //set pmatrix for perspective projection
 //aspect ratio = 1:1, fovY = 90 degrees, near clipping = 1, far clipping = 25
@@ -89,6 +97,12 @@ function draw(){
     // pass V and P matrices to the shader
     gl.uniformMatrix4fv(vMatrixLocation, false, vMatrix);
     gl.uniformMatrix4fv(pMatrixLocation, false, pMatrix);
+
+    //pass lighting parameters to shader
+    gl.uniform3fv(lightPositionLocation, lightPosition);
+    gl.uniform3fv(eyePositionLocation, eye_position);
+    gl.uniform3fv(ILocation, I);
+    gl.uniform3fv(IaLocation, Ia);
 
     //now drawing individual scene objects
     person.draw();
@@ -137,7 +151,7 @@ class Shape {
         mat3.fromMat4(nMatrix, combinedMatrix) //make mMatrix 3x3
         mat3.invert(nMatrix, nMatrix)   // invert matrix
         mat3.transpose(nMatrix, nMatrix) //transpose matrix
-        gl.uniformMatrix3fv(nMatrixLocation, false, new Float32Array(nMatrix)); //pass nMatrix
+        gl.uniformMatrix3fv(nMatrixLocation, false, nMatrix); //pass nMatrix
 
 
         gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_SHORT, 0);  //draw
@@ -175,41 +189,37 @@ let temp = mat4.create(); //matrix used to define the mMatrix of shapes and obje
 
 const person = new ObjectWebGL();
 temp = mat4.create(); mat4.scale(temp, temp, [1, 1.5, 1]);
-const body = new Shape(setCylinderVert(), setCylinderIndices(), temp, setCylinderColor());
+const body = new Shape(setCylinderVert(), setCylinderIndices(), temp, setCylinderColor(), setCylinderNormals());
 temp = mat4.create(); mat4.translate(temp, temp, [0, 1.25, 0]);
-const head = new Shape(setSphereVert(), setSphereIndices(), temp, setSphereColor()); 
+const head = new Shape(setSphereVert(), setSphereIndices(), temp, setSphereColor(),  setSphereNormals()); 
 person.shapes.push(body);
 person.shapes.push(head);
 
 const leg1 = new ObjectWebGL();
 temp = mat4.create(); mat4.translate(temp, temp, [0, -0.75, 0]); leg1.local_transform(temp);
 temp = mat4.create(); mat4.translate(temp, temp, [-0.3, -0.75, 0]); mat4.rotateZ(temp, temp, -0.05); mat4.rotateY(temp, temp, Math.PI);  mat4.scale(temp, temp, [0.40, 1.5, 0.40]);
-const leg1s = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColor()); 
+const leg1s = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColor(), setCubeNormals()); 
 leg1.shapes.push(leg1s);
 
 const leg2 = new ObjectWebGL();
 temp = mat4.create(); mat4.translate(temp, temp, [0, -0.75, 0]); leg2.local_transform(temp);
 temp = mat4.create(); mat4.translate(temp, temp, [0.3, -0.75, 0]); mat4.rotateZ(temp, temp, 0.05); mat4.scale(temp, temp, [0.40, 1.5, 0.40]);
-const leg2s = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColor()); 
+const leg2s = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColor(), setCubeNormals()); 
 leg2.shapes.push(leg2s);
 
 const arms = new ObjectWebGL();
 temp = mat4.create(); mat4.translate(temp, temp, [0, 0.65, 0]); arms.local_transform(temp)
-temp = mat4.create(); mat4.translate(temp, temp, [-0.625, 0, 0]); mat4.rotateZ(temp, temp, -0.07); mat4.rotateX(temp, temp, -1/2 * Math.PI); mat4.scale(temp, temp, [0.25, 1.5, 0.25]); 
-const arm1 = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColor()); 
-temp = mat4.create(); mat4.translate(temp, temp, [0.625, 0, 0]); mat4.rotateZ(temp, temp, 0.07); mat4.rotateX(temp, temp, -1/2 * Math.PI);  mat4.scale(temp, temp, [0.25, 1.5, 0.25]);
-const arm2 = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColor());  
-for (let i = 0; i < arm1.vertices.length/3; i++){    
-    arm1.vertices[i*3 + 1] = arm1.vertices[i*3 + 1] - 0.5;
-    arm2.vertices[i*3 + 1] = arm2.vertices[i*3 + 1] - 0.5;
-}
+temp = mat4.create(); mat4.translate(temp, temp, [-0.625, 0, 0.6]); mat4.rotateZ(temp, temp, -0.07); mat4.rotateX(temp, temp, -1/2 * Math.PI); mat4.scale(temp, temp, [0.25, 1.5, 0.25]); 
+const arm1 = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColor(), setCubeNormals()); 
+temp = mat4.create(); mat4.translate(temp, temp, [0.625, 0, 0.6]); mat4.rotateZ(temp, temp, 0.07); mat4.rotateX(temp, temp, -1/2 * Math.PI);  mat4.scale(temp, temp, [0.25, 1.5, 0.25]);
+const arm2 = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColor(), setCubeNormals());  
 arms.shapes.push(arm1);
 arms.shapes.push(arm2);
 
 const box = new ObjectWebGL();
 temp = mat4.create(); mat4.translate(temp, temp, [0, 0.175, 1.4]); box.local_transform(temp);
 temp = mat4.create(); mat4.translate(temp, temp, [0, 0.625, 0]); mat4.scale(temp, temp, [1.25, 1.25, 1.25]);
-const cube = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColorB()); 
+const cube = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColorB(), setCubeNormals()); 
 box.shapes.push(cube)
 
 person.children.push(leg1);
@@ -221,16 +231,16 @@ arms.children.push(box);
 
 const scenery = new ObjectWebGL();
 temp = mat4.create(); mat4.translate(temp, temp, [0, -2.5, 0]); mat4.scale(temp, temp, [70, 1, 70]);
-const ground = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColorG()); 
+const ground = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColorG(), setCubeNormals()); 
 scenery.shapes.push(ground);
 for (let i = 0; i < 20; i++){
     temp = mat4.create(); mat4.translate(temp, temp, [(Math.random()*40)-20, -0.9, (Math.random()*40)-20]); mat4.scale(temp, temp, [1.5, 2, 1.5]);
-    let barrel = new Shape(setCylinderVert(), setCylinderIndices(), temp, setCylinderColorB()); 
+    let barrel = new Shape(setCylinderVert(), setCylinderIndices(), temp, setCylinderColorB(), setCylinderNormals()); 
     scenery.shapes.push(barrel);
 }
 for (let i = 0; i < 20; i++){
     temp = mat4.create(); mat4.translate(temp, temp, [(Math.random()*40)-20, -1.33, (Math.random()*40)-20]); mat4.scale(temp, temp, [1.25, 1.25, 1.25]);
-    let cardboard = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColorB()); 
+    let cardboard = new Shape(setCubeVert(), setCubeIndices(), temp, setCubeColorB(), setCubeNormals()); 
     scenery.shapes.push(cardboard);
 }
 
